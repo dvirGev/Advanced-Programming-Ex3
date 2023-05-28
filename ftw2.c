@@ -71,29 +71,24 @@ static int /* Callback function called by ftw() */
 dirTree2(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb)
 {
     // print the tree root
-    //  Calculate the indentation based on the level in the directory hierarchy
-    int indent = ftwb->level;
-
-    // Print the indentation characters
-    for (int i = 0; i < indent; i++)
-    {
-        putchar(' ');
-        putchar(' ');
-    }
-
     // Print the tree structure
-    if (ftwb->level > 0)
+    for (int i = 0; i < ftwb->level - 1; i++)
     {
-        printf("├─");
+        printf("    │");
     }
-    else
+    if (ftwb->level == 0)
     {
         printf("└─");
     }
+    else
+    {
+        printf("    ├─");
+    }
+    //  Calculate the indentation based on the level in the directory hierarchy
+    // Print the indentation characters
 
     // Check if it's a regular file
-    if (type == FTW_F)
-    {
+
         printf("[");
 
         // Extract the file permissions from the st_mode field
@@ -112,10 +107,9 @@ dirTree2(const char *pathname, const struct stat *sbuf, int type, struct FTW *ft
         printf((permissions & S_IXOTH) ? "x " : "- ");
 
         // printf("%s\n", fpath); // Print the file path
-    }
+    
     // Check if it's a regular file
-    if (type == FTW_F)
-    {
+
         // Extract the user ID from the st_uid field
         uid_t uid = sbuf->st_uid;
 
@@ -131,10 +125,9 @@ dirTree2(const char *pathname, const struct stat *sbuf, int type, struct FTW *ft
             // If the user name cannot be retrieved, print UID instead
             printf("User ID: %d, File: %s\n", uid, pathname);
         }
-    }
+    
     // print the group name
-    if (type == FTW_F)
-    {
+
         struct group *grp;
         gid_t gid = sbuf->st_gid;
 
@@ -147,17 +140,21 @@ dirTree2(const char *pathname, const struct stat *sbuf, int type, struct FTW *ft
         {
             printf("Unknown ");
         }
-    }
+    
     printf(" %*s", 4, " ");
+
     // print the size
-    if (type == FTW_F)
-    {
+
         printf("%lld ", (long long)sbuf->st_size);
         printf("]");
+    
+    if ((sbuf->st_mode & S_IFMT) == S_IFDIR)
+    {
+        printf("\033[0;34m"); // If it's a folder, turn the color blue
     }
-
-    printf("%s\n", &pathname[ftwb->base]); /* Print basename */
-    return 0;                              /* Tell nftw() to continue */
+    printf(" %s\n", &pathname[ftwb->base]); /* Print basename */
+    printf("\033[0;37m");                   // Return the color to white
+    return 0;                               /* Tell nftw() to continue */
 }
 int main(int argc, char *argv[])
 {
